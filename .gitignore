@@ -1,0 +1,43 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+*.egg
+dist/
+build/
+eggs/
+*.whl
+
+# Virtual environments
+venv/
+venv_deps/
+.env
+.venv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Project specific
+*.backup
+cost_tracking_data/
+auto_tuner/
+decision_engine_*/
+benchmark_data/
+learning_router_data/
+logs/
+*.log
+
+# Temporary
+tmp/
+temp/
+*.tmp

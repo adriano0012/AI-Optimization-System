@@ -1,0 +1,17 @@
+# Core dependencies
+numpy>=1.24.0
+
+# Optional heavy dependencies (not required for basic usage)
+# Install with: pip install universal-ai-optimizer[ml]
+# torch>=2.0.0
+# transformers>=4.30.0
+# sentence-transformers>=2.2.0
+# faiss-cpu>=1.7.0
+
+# Optional cache backends
+# redis>=4.5.0
+
+# For development and testing
+pytest>=7.0.0
+black>=23.0.0
+flake8>=6.0.0
