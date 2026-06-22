@@ -1381,6 +1381,50 @@ class TestDatabaseTransactions:
 
 
 # ============================================================
+# 16. SECURITY - LazyModule Whitelist
+# ============================================================
+
+
+class TestLazyModuleWhitelist:
+    def test_allowed_internal_module(self):
+        from core.optimizer import LazyModule
+        lm = LazyModule("modules.observability.logging", "StructuredLogger")
+        assert lm._module_path == "modules.observability.logging"
+
+    def test_allowed_prefix_modules(self):
+        from core.optimizer import LazyModule
+        allowed = [
+            "modules.security.rate_limiter",
+            "modules.cache_manager",
+            "core.base",
+            "configs.default",
+        ]
+        for path in allowed:
+            lm = LazyModule(path, "SomeClass")
+            assert lm._module_path == path
+
+    def test_blocked_external_module(self):
+        from core.optimizer import LazyModule
+        with pytest.raises(ImportError, match="not in allowed prefixes"):
+            LazyModule("os", "system")
+
+    def test_blocked_subprocess(self):
+        from core.optimizer import LazyModule
+        with pytest.raises(ImportError, match="not in allowed prefixes"):
+            LazyModule("subprocess", "run")
+
+    def test_blocked_random_module(self):
+        from core.optimizer import LazyModule
+        with pytest.raises(ImportError, match="not in allowed prefixes"):
+            LazyModule("random.malicious", "payload")
+
+    def test_blocked_path_traversal(self):
+        from core.optimizer import LazyModule
+        with pytest.raises(ImportError, match="not in allowed prefixes"):
+            LazyModule("../../../etc/passwd", "read")
+
+
+# ============================================================
 # 15. BATCH PROCESSOR - Progress Tracking
 # ============================================================
 

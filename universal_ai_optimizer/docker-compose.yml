@@ -20,6 +20,9 @@ services:
       retries: 3
       start_period: 10s
     restart: unless-stopped
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
     deploy:
       resources:
         limits:

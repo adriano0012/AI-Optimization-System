@@ -36,9 +36,24 @@ class PromptTooLargeError(ValueError):
 
 
 class LazyModule:
-    """True lazy loading proxy - module is only imported when first accessed."""
+    """True lazy loading proxy - module is only imported when first accessed.
+    
+    SECURITY: Uses a whitelist to prevent arbitrary code execution via importlib.
+    """
+    
+    _ALLOWED_PREFIXES = (
+        'modules.',
+        'universal_ai_optimizer.',
+        'core.',
+        'configs.',
+    )
     
     def __init__(self, module_path: str, class_name: str, config: Optional[Dict] = None):
+        if not any(module_path.startswith(p) or module_path == p.rstrip('.')
+                   for p in self._ALLOWED_PREFIXES):
+            raise ImportError(
+                f"Security: module_path '{module_path}' not in allowed prefixes"
+            )
         self._module_path = module_path
         self._class_name = class_name
         self._config = config or {}

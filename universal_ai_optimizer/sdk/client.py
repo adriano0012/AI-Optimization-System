@@ -66,6 +66,14 @@ class UAIOptimizerClient:
         if params:
             url += '?' + urllib.parse.urlencode(params)
 
+        # Validate URL to prevent dangerous schemes like file://
+        parsed = urllib.parse.urlparse(url)
+        if parsed.scheme not in ('http', 'https'):
+            raise UAIClientError(
+                f"URL scheme '{parsed.scheme}' is not allowed. Only http and https are permitted.",
+                response={'status_code': None, 'error': 'Invalid URL scheme'}
+            )
+
         body = json.dumps(data).encode() if data else None
         headers = self._get_headers()
 

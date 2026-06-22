@@ -1,0 +1,74 @@
+[35muniversal_ai_optimizer/alembic/versions/2e8d70942f69_initial_schema.py[m[36m:[m    op.create_table('[1;31mapi_key[ms',
+[35muniversal_ai_optimizer/alembic/versions/2e8d70942f69_initial_schema.py[m[36m:[m    op.create_index(op.f('ix_[1;31mapi_key[ms_key'), '[1;31mapi_key[ms', ['key'], unique=True)
+[35muniversal_ai_optimizer/alembic/versions/2e8d70942f69_initial_schema.py[m[36m:[m    op.drop_index(op.f('ix_[1;31mapi_key[ms_key'), table_name='[1;31mapi_key[ms')
+[35muniversal_ai_optimizer/alembic/versions/2e8d70942f69_initial_schema.py[m[36m:[m    op.drop_table('[1;31mapi_key[ms')
+[35muniversal_ai_optimizer/api/app.py[m[36m:[m    x_[1;31mapi_key[m: Optional[str] = Header(None, alias="X-API-Key"),
+[35muniversal_ai_optimizer/api/app.py[m[36m:[m    if x_[1;31mapi_key[m and auth_manager:
+[35muniversal_ai_optimizer/api/app.py[m[36m:[m        key_info = auth_manager.validate_[1;31mapi_key[m(x_[1;31mapi_key[m)
+[35muniversal_ai_optimizer/api/app.py[m[36m:[m            return {'type': '[1;31mapi_key[m', **key_info}
+[35muniversal_ai_optimizer/api/app.py[m[36m:[masync def create_[1;31mapi_key[m(
+[35muniversal_ai_optimizer/api/app.py[m[36m:[m    key_data = auth_manager.generate_[1;31mapi_key[m(
+[35muniversal_ai_optimizer/api/app.py[m[36m:[m    log_audit("[1;31mapi_key[m.created", user, "[1;31mapi_key[m", key_data['id'])
+[35muniversal_ai_optimizer/api/app.py[m[36m:[masync def list_[1;31mapi_key[ms(user=Depends(get_current_user)):
+[35muniversal_ai_optimizer/api/auth.py[m[36m:[m[1;31mAPI_KEY[m_LENGTH = 48
+[35muniversal_ai_optimizer/api/auth.py[m[36m:[m        self._[1;31mapi_key[m_cache: Dict[str, Dict] = {}
+[35muniversal_ai_optimizer/api/auth.py[m[36m:[m    def generate_[1;31mapi_key[m(self, name: str, organization_id: Optional[str] = None,
+[35muniversal_ai_optimizer/api/auth.py[m[36m:[m        key = "uai_" + secrets.token_hex([1;31mAPI_KEY[m_LENGTH // 2)
+[35muniversal_ai_optimizer/api/auth.py[m[36m:[m                [1;31mapi_key[m = ApiKey(
+[35muniversal_ai_optimizer/api/auth.py[m[36m:[m                session.add([1;31mapi_key[m)
+[35muniversal_ai_optimizer/api/auth.py[m[36m:[m                    'id': [1;31mapi_key[m.id, 'name': name, 'key': key,
+[35muniversal_ai_optimizer/api/auth.py[m[36m:[m                    'created_at': str([1;31mapi_key[m.created_at),
+[35muniversal_ai_optimizer/api/auth.py[m[36m:[m    def validate_[1;31mapi_key[m(self, [1;31mapi_key[m: str) -> Optional[Dict[str, Any]]:
+[35muniversal_ai_optimizer/api/auth.py[m[36m:[m        key_hash = hashlib.sha256([1;31mapi_key[m.encode()).hexdigest()
+[35muniversal_ai_optimizer/api/auth.py[m[36m:[m        if key_hash in self._[1;31mapi_key[m_cache:
+[35muniversal_ai_optimizer/api/auth.py[m[36m:[m            return self._[1;31mapi_key[m_cache[key_hash]
+[35muniversal_ai_optimizer/api/auth.py[m[36m:[m                    self._[1;31mapi_key[m_cache[key_hash] = info
+[35muniversal_ai_optimizer/api/auth.py[m[36m:[m    def revoke_[1;31mapi_key[m(self, key_id: str) -> bool:
+[35muniversal_ai_optimizer/api/auth.py[m[36m:[m                self._[1;31mapi_key[m_cache.pop(key_hash, None)
+[35muniversal_ai_optimizer/api/models.py[m[36m:[m    [1;31mapi_key[ms = relationship('ApiKey', back_populates='organization')
+[35muniversal_ai_optimizer/api/models.py[m[36m:[m    __tablename__ = '[1;31mapi_key[ms'
+[35muniversal_ai_optimizer/api/models.py[m[36m:[m    organization = relationship('Organization', back_populates='[1;31mapi_key[ms')
+[35muniversal_ai_optimizer/modules/adapters/anthropic_adapter.py[m[36m:[m        self.[1;31mapi_key[m = self.config.get('[1;31mapi_key[m') or os.environ.get('ANTHROPIC_[1;31mAPI_KEY[m')
+[35muniversal_ai_optimizer/modules/adapters/anthropic_adapter.py[m[36m:[m        if self.[1;31mapi_key[m:
+[35muniversal_ai_optimizer/modules/adapters/anthropic_adapter.py[m[36m:[m            self.client = anthropic.Anthropic([1;31mapi_key[m=self.[1;31mapi_key[m, timeout=self.timeout)
+[35muniversal_ai_optimizer/modules/adapters/anthropic_adapter.py[m[36m:[m            masked_key = f"...{self.[1;31mapi_key[m[-4:]}" if len(self.[1;31mapi_key[m) > 4 else "***"
+[35muniversal_ai_optimizer/modules/adapters/anthropic_adapter.py[m[36m:[m        return bool(self.[1;31mapi_key[m)
+[35muniversal_ai_optimizer/modules/adapters/gemini_adapter.py[m[36m:[m        self.[1;31mapi_key[m = self.config.get('[1;31mapi_key[m')
+[35muniversal_ai_optimizer/modules/adapters/gemini_adapter.py[m[36m:[m        if self.[1;31mapi_key[m:
+[35muniversal_ai_optimizer/modules/adapters/gemini_adapter.py[m[36m:[m            genai.configure([1;31mapi_key[m=self.[1;31mapi_key[m)
+[35muniversal_ai_optimizer/modules/adapters/gemini_adapter.py[m[36m:[m        if not self.[1;31mapi_key[m:
+[35muniversal_ai_optimizer/modules/adapters/groq_adapter.py[m[36m:[m        self.[1;31mapi_key[m = self.config.get('[1;31mapi_key[m')
+[35muniversal_ai_optimizer/modules/adapters/groq_adapter.py[m[36m:[m        if not self.[1;31mapi_key[m:
+[35muniversal_ai_optimizer/modules/adapters/groq_adapter.py[m[36m:[m                "Authorization": f"Bearer {self.[1;31mapi_key[m}",
+[35muniversal_ai_optimizer/modules/adapters/groq_adapter.py[m[36m:[m        if not self.[1;31mapi_key[m:
+[35muniversal_ai_optimizer/modules/adapters/openai_adapter.py[m[36m:[m        self.[1;31mapi_key[m = self.config.get('[1;31mapi_key[m') or os.environ.get('OPENAI_[1;31mAPI_KEY[m')
+[35muniversal_ai_optimizer/modules/adapters/openai_adapter.py[m[36m:[m        if self.[1;31mapi_key[m:
+[35muniversal_ai_optimizer/modules/adapters/openai_adapter.py[m[36m:[m            client_kwargs = {'[1;31mapi_key[m': self.[1;31mapi_key[m}
+[35muniversal_ai_optimizer/modules/adapters/openai_adapter.py[m[36m:[m            masked_key = f"...{self.[1;31mapi_key[m[-4:]}" if len(self.[1;31mapi_key[m) > 4 else "***"
+[35muniversal_ai_optimizer/modules/adapters/openai_adapter.py[m[36m:[m        return bool(self.[1;31mapi_key[m)
+[35muniversal_ai_optimizer/modules/adapters/openrouter_adapter.py[m[36m:[m        self.[1;31mapi_key[m = self.config.get('[1;31mapi_key[m')
+[35muniversal_ai_optimizer/modules/adapters/openrouter_adapter.py[m[36m:[m        if not self.[1;31mapi_key[m:
+[35muniversal_ai_optimizer/modules/adapters/openrouter_adapter.py[m[36m:[m                "Authorization": f"Bearer {self.[1;31mapi_key[m}",
+[35muniversal_ai_optimizer/modules/adapters/openrouter_adapter.py[m[36m:[m        if not self.[1;31mapi_key[m:
+[35muniversal_ai_optimizer/modules/observability/logging.py[m[36m:[mSENSITIVE_KEYS = {'[1;31mapi_key[m', 'password', 'token', 'secret', 'authorization', 'cookie'}
+[35muniversal_ai_optimizer/modules/webhooks/webhook_manager.py[m[36m:[m    [1;31mAPI_KEY[m_CREATED = "[1;31mapi_key[m.created"
+[35muniversal_ai_optimizer/sdk/client.py[m[36m:[m    [1;31mapi_key[m: Optional[str] = None
+[35muniversal_ai_optimizer/sdk/client.py[m[36m:[m        elif self.config.[1;31mapi_key[m:
+[35muniversal_ai_optimizer/sdk/client.py[m[36m:[m            headers['X-API-Key'] = self.config.[1;31mapi_key[m
+[35muniversal_ai_optimizer/sdk/client.py[m[36m:[m    def create_[1;31mapi_key[m(self, name: str, rate_limit: int = 1000) -> Dict[str, Any]:
+[35muniversal_ai_optimizer/sdk/client.py[m[36m:[m    def list_[1;31mapi_key[ms(self) -> List[Dict[str, Any]]:
+Binary file [35muniversal_ai_optimizer/test_api.db[m matches
+[35muniversal_ai_optimizer/tests/conftest.py[m[36m:[m        "[1;31mapi_key[m": "test-key-12345",
+[35muniversal_ai_optimizer/tests/test_adapters.py[m[36m:[m        assert adapter.[1;31mapi_key[m == "test-key-12345"
+[35muniversal_ai_optimizer/tests/test_adapters.py[m[36m:[m        assert adapter.[1;31mapi_key[m == "test-key-12345"
+[35muniversal_ai_optimizer/tests/test_api.py[m[36m:[m    def test_create_[1;31mapi_key[m(self, client):
+[35muniversal_ai_optimizer/tests/test_api.py[m[36m:[m    def test_list_[1;31mapi_key[ms(self, client):
+[35muniversal_ai_optimizer/tests/test_api.py[m[36m:[m    def test_optimize_with_[1;31mapi_key[m(self, client):
+[35muniversal_ai_optimizer/tests/test_api.py[m[36m:[m        [1;31mapi_key[m = key_resp.json()['key']
+[35muniversal_ai_optimizer/tests/test_api.py[m[36m:[m            headers={"X-API-Key": [1;31mapi_key[m}
+[35muniversal_ai_optimizer/tests/test_deep.py[m[36m:[m    def test_pii_[1;31mapi_key[m_redaction(self):
+[35muniversal_ai_optimizer/tests/test_deep.py[m[36m:[m        result = redact_pii("[1;31mapi_key[m=sk_1234567890abcdef")
+[35muniversal_ai_optimizer/tests/test_deep.py[m[36m:[m    def test_[1;31mapi_key[m_creation(self, db):
+[35muniversal_ai_optimizer/tests/test_new_modules.py[m[36m:[m    def test_[1;31mapi_key[m(self):
+[35muniversal_ai_optimizer/tests/test_new_modules.py[m[36m:[m        assert '[REDACTED]' in redact_pii('[1;31mapi_key[m=sk_12345')
+[35muniversal_ai_optimizer/tests/test_security.py[m[36m:[m        custom = {"custom_[1;31mapi_key[m": re.compile(r"sk-[a-zA-Z0-9]{32}")}

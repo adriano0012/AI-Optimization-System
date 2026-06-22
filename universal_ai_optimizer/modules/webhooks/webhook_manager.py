@@ -113,6 +113,13 @@ class WebhookManager:
         max_retries: int = 3,
     ) -> Webhook:
         import secrets
+        from urllib.parse import urlparse
+        
+        # Validate URL to prevent file:// and other dangerous schemes
+        parsed = urlparse(url)
+        if parsed.scheme not in ('http', 'https'):
+            raise ValueError(f"Webhook URL must use http or https scheme, got: {parsed.scheme}")
+        
         webhook_id = f"wh-{secrets.token_hex(8)}"
         secret = secrets.token_hex(32)
 
