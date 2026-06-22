@@ -555,12 +555,14 @@ class ExecutionEngine(BaseOptimizerModule):
         # In a real implementation, we would call adapter.generate() or similar
         # For now, we return a mock result with minimal timing overhead
         # NOTE: Reduced sleep for non-blocking simulation; not suitable for production timing
-        
+
         estimated_tokens = model_input.get('estimated_tokens', 50)
-        
+
         # Minimal sleep to yield thread without blocking pool slot
+        start_time = time.time()
         time.sleep(0.001)
-        
+        execution_time = time.time() - start_time
+
         # Generate mock response
         prompt_preview = model_input.get('prompt', '')[:50]
         class MockResult:
@@ -571,9 +573,9 @@ class ExecutionEngine(BaseOptimizerModule):
                 self.speculative_accuracy = 0.0
                 self.batch_processed = False
                 self.pipelined_executed = False
-        
+
         return MockResult(f"Generated response for: '{prompt_preview}'... "
-                         f"(tokens: {estimated_tokens}, time: {execution_time*1000:.1f}ms)")
+                          f"(tokens: {estimated_tokens}, time: {execution_time*1000:.1f}ms)")
     
     def _allocate_resources(self, execution_id: str, model_input: Dict[str, Any]):
         """Allocate resources for an execution"""

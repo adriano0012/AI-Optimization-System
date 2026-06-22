@@ -1,32 +1,32 @@
 """Integration test that exercises the full pipeline through UniversalAIOptimizer."""
 import pytest
 from universal_ai_optimizer.configs.default import OptimizerConfig
-from core.optimizer import OptimizationResult
+from universal_ai_optimizer.core.optimizer import OptimizationResult
 
 
 class TestPipeline:
     def test_optimizer_init(self):
-        from core.optimizer import UniversalAIOptimizer
+        from universal_ai_optimizer.core.optimizer import UniversalAIOptimizer
         opt = UniversalAIOptimizer()
         assert opt.config is not None
         assert hasattr(opt.config, 'debug')
 
     def test_optimizer_init_with_config(self):
-        from core.optimizer import UniversalAIOptimizer
+        from universal_ai_optimizer.core.optimizer import UniversalAIOptimizer
         config = OptimizerConfig()
         config.debug = True
         opt = UniversalAIOptimizer(config)
         assert opt.config.debug is True
 
     def test_optimize_returns_result(self):
-        from core.optimizer import UniversalAIOptimizer
+        from universal_ai_optimizer.core.optimizer import UniversalAIOptimizer
         opt = UniversalAIOptimizer()
         result = opt.optimize("What is 2+2?", {}, None)
         assert isinstance(result, OptimizationResult)
         assert result.original_prompt == "What is 2+2?"
 
     def test_get_metrics(self):
-        from core.optimizer import UniversalAIOptimizer
+        from universal_ai_optimizer.core.optimizer import UniversalAIOptimizer
         opt = UniversalAIOptimizer()
         metrics = opt.get_metrics()
         assert isinstance(metrics, dict)
@@ -34,20 +34,20 @@ class TestPipeline:
 
     def test_pipeline_runs_through_all_modules(self):
         """Verify that the pipeline processes through routing, execution, verification, etc."""
-        from core.optimizer import UniversalAIOptimizer
+        from universal_ai_optimizer.core.optimizer import UniversalAIOptimizer
         opt = UniversalAIOptimizer()
         result = opt.optimize("def hello(): pass", {"task_type": "code_generation"}, None)
         assert result.original_prompt == "def hello(): pass"
 
     def test_pipeline_with_context(self):
-        from core.optimizer import UniversalAIOptimizer
+        from universal_ai_optimizer.core.optimizer import UniversalAIOptimizer
         opt = UniversalAIOptimizer()
         result = opt.optimize("explain quantum computing", {"task_type": "question_answering", "difficulty": "hard"}, None)
         assert result.original_prompt == "explain quantum computing"
 
     def test_full_pipeline_no_crash(self):
         """End-to-end smoke test with all default configs."""
-        from core.optimizer import UniversalAIOptimizer
+        from universal_ai_optimizer.core.optimizer import UniversalAIOptimizer
         opt = UniversalAIOptimizer()
         tasks = [
             ("write a poem about AI", {"task_type": "creative_writing"}),

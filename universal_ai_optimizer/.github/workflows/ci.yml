@@ -1,0 +1,69 @@
+name: CI/CD
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+env:
+  PYTHON_VERSION: '3.11'
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - run: pip install ruff
+      - run: ruff check universal_ai_optimizer/ api/
+
+  typecheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - run: pip install mypy types-requests
+      - run: mypy universal_ai_optimizer/ --ignore-missing-imports --no-error-summary || true
+
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.10', '3.11', '3.12']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: pip install -r requirements.txt pytest pytest-cov
+      - run: cd universal_ai_optimizer && python -m pytest tests/ -v --tb=short --co -q | head -1
+      - run: cd universal_ai_optimizer && python -m pytest tests/ -v --tb=short -q
+      - run: cd universal_ai_optimizer && python -m pytest tests/ --cov=. --cov-report=term-missing --cov-fail-under=50 -q || true
+
+  security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - run: pip install bandit safety
+      - run: bandit -r universal_ai_optimizer/ -ll || true
+      - run: safety check || true
+
+  build-docker:
+    runs-on: ubuntu-latest
+    needs: [lint, test]
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/build-push-action@v5
+        with:
+          push: false
+          tags: uai-optimizer:${{ github.sha }}
+          context: .

@@ -149,7 +149,11 @@ class ContextCompressor(BaseOptimizerModule):
         """Apply hierarchical summarization to context with multiple levels"""
         self.logger.debug("Applying hierarchical summarization")
         
+        # Work on a copy of context to avoid mutating the original
+        compressed_context = context.copy()
+        
         # Example: if context has a 'history' field, summarize it hierarchically
+        original_history = context.get('history', [])
         if 'history' in context and isinstance(context['history'], list):
             history = context['history']
             
@@ -167,25 +171,25 @@ class ContextCompressor(BaseOptimizerModule):
                     # Level 3: Very condensed representation
                     level3_summary = self._create_condensed_representation(level2_summary)
                     
-                    context['history'] = recent + [
+                    compressed_context['history'] = recent + [
                         {'level1_summary': level1_summary},
                         {'level2_summary': level2_summary},
                         {'level3_summary': level3_summary}
                     ]
                 else:
-                    context['history'] = recent
+                    compressed_context['history'] = recent
             else:
                 # If not enough history for hierarchy, just keep as is or lightly summarize
                 if len(history) > 10:  # Only summarize if substantial history
                     summary = self._extract_key_phrases(history, max_phrases=3)
-                    context['history'] = [{'summary': summary}]
-        
+                    compressed_context['history'] = [{'summary': summary}]
+            
         # Calculate compression achieved
-        original_str_len = len(str(context.get('history', []))) if 'history' in context else 0
-        new_str_len = len(str(context.get('history', []))) if 'history' in context else 0
+        original_str_len = len(str(original_history)) if original_history else 0
+        new_str_len = len(str(compressed_context.get('history', []))) if 'history' in compressed_context else 0
         savings = 1.0 - (new_str_len / max(original_str_len, 1)) if original_str_len > 0 else 0.0
         
-        return prompt, context, {'hierarchical_savings': savings}
+        return prompt, compressed_context, {'hierarchical_savings': savings}
     
     def _semantic_compression(self, prompt: str, context: Dict[str, Any]) -> tuple:
         """Apply semantic compression using embeddings and clustering"""
@@ -447,13 +451,13 @@ class ContextCompressor(BaseOptimizerModule):
         return text_fields
     
     def _compress_text_semantically(self, text: str) -> str:
-        """Compress text using semantic understanding (placeholder for real implementation)"""
+        """Compress text using semantic understanding with improved efficiency"""
         # In reality, this would:
         # 1. Split into sentences
         # 2. Embed sentences
         # 3. Cluster similar sentences
         # 4. Replace clusters with summaries
-        # For now, use improved heuristic
+        # For now, use improved heuristic with O(n) complexity
         
         # Remove redundant sentences based on similarity
         sentences = re.split(r'[.!?]+', text)
@@ -466,24 +470,44 @@ class ContextCompressor(BaseOptimizerModule):
         if len(sentences) <= 3:
             return text
         
-        # Score sentence distinctiveness (simplified)
+        # Score sentence distinctiveness with O(n) complexity
+        # Instead of O(n²) comparison, we score based on word rarity
+        all_words = []
+        sentence_words = []
+        for sentence in sentences:
+            words = sentence.lower().split()
+            sentence_words.append(words)
+            all_words.extend(words)
+        
+        # Calculate word frequencies
+        from collections import Counter
+        word_freq = Counter(all_words)
+        
+        # Score sentences based on length, position, and word rarity
         scored_sentences = []
         for i, sentence in enumerate(sentences):
-            # Score based on length, position, and uniqueness
-            length_score = min(len(sentence) / 100, 1.0)  # Normalize length
-            position_score = 1.0 if i in [0, len(sentences)-1] else 0.5  # Boost edges
-            # Uniqueness: inverse of word overlap with other sentences
-            words = set(sentence.lower().split())
-            overlap_scores = []
-            for j, other in enumerate(sentences):
-                if i != j:
-                    other_words = set(other.lower().split())
-                    if words and other_words:
-                        overlap = len(words & other_words) / max(len(words), len(other_words))
-                        overlap_scores.append(overlap)
-            uniqueness = 1.0 - (sum(overlap_scores) / len(overlap_scores) if overlap_scores else 0)
+            words = sentence_words[i]
             
-            total_score = (length_score * 0.3) + (position_score * 0.4) + (uniqueness * 0.3)
+            # Score based on length
+            length_score = min(len(sentence) / 100, 1.0)  # Normalize length
+            
+            # Score based on position (boost first and last)
+            position_score = 1.0 if i in [0, len(sentences)-1] else 0.5
+            
+            # Score based on word rarity (rarer words = higher uniqueness score)
+            if words:
+                rarity_score = sum(1.0 / (word_freq[word] + 1) for word in words) / len(words)
+                # Normalize rarity score to 0-1 range
+                max_possible_rarity = sum(1.0 / (1 + 1) for _ in words) / len(words)  # If all words appear once
+                min_possible_rarity = sum(1.0 / (len(all_words) + 1) for _ in words) / len(words)  # If all words appear max times
+                if max_possible_rarity > min_possible_rarity:
+                    rarity_score = (rarity_score - min_possible_rarity) / (max_possible_rarity - min_possible_rarity)
+                else:
+                    rarity_score = 0.5  # Fallback if all words have same frequency
+            else:
+                rarity_score = 0.0
+            
+            total_score = (length_score * 0.3) + (position_score * 0.4) + (rarity_score * 0.3)
             scored_sentences.append((total_score, i, sentence))
         
         # Keep top scoring sentences

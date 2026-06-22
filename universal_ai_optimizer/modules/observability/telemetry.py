@@ -161,6 +161,32 @@ class Telemetry(BaseOptimizerModule):
         self._export_telemetry()
         self.logger.debug("Telemetry shutdown complete")
     
+    def process(self, prompt: str, context: Dict[str, Any], 
+                model_adapter: Optional[Any] = None, 
+                pipeline_state: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+        """
+        Telemetry doesn't process prompts directly, but can record telemetry about the request
+        """
+        if not self.enabled:
+            return {}
+            
+        self._log_processing(len(prompt), len(str(context)) if context else 0)
+        
+        # Record telemetry about this optimization request
+        self.record_metric('optimization.request', 1.0, {
+            'prompt_length': len(prompt),
+            'context_size': len(str(context)) if context else 0
+        })
+        
+        # Return current telemetry status
+        return {
+            'telemetry_enabled': self.enabled,
+            'buffer_size': len(self.telemetry_buffer),
+            'service_name': self.service_name,
+            'timestamp': time.time(),
+            'module': self.__class__.__name__
+        }
+
     def get_metrics(self) -> Dict[str, Any]:
         """Get telemetry metrics"""
         base_metrics = super().get_metrics()

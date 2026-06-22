@@ -188,7 +188,7 @@ class MemoryManager(BaseOptimizerModule):
         self.access_patterns = defaultdict(list)  # Track access patterns for prediction
         
         # Background cleanup thread
-        self._cleanup_thread = threading.Thread(target=self._cleanup_loop, daemon=False)
+        self._cleanup_thread = threading.Thread(target=self._cleanup_loop, daemon=True)
         self._cleanup_thread.start()
     
     def process(self, prompt: str, context: Dict[str, Any], 

@@ -168,6 +168,22 @@ class TelemetryConfig:
 
     def to_dict(self): return self.__dict__
 
+
+@dataclass
+class GPUConfig:
+    """Configuration for GPU optimization"""
+    enabled: bool = True
+    quantization_levels: list = field(default_factory=lambda: ['int8', 'int4', 'fp16'])
+    memory_pool_size_mb: int = 2048
+    enable_kernel_fusion: bool = True
+    enable_memory_optimization: bool = True
+    enable_dynamic_batching: bool = True
+    enable_async_execution: bool = True
+    gpu_utilization_target: float = 0.8
+    temperature_threshold_celsius: int = 80
+
+    def to_dict(self): return self.__dict__
+
 @dataclass
 class OptimizerConfig:
     """Main configuration for the Universal AI Optimizer"""
@@ -186,6 +202,7 @@ class OptimizerConfig:
     metrics: MetricsConfig = field(default_factory=MetricsConfig)
     monitoring: MonitoringConfig = field(default_factory=MonitoringConfig)
     telemetry: TelemetryConfig = field(default_factory=TelemetryConfig)
+    gpu: GPUConfig = field(default_factory=GPUConfig)
     
     # Global settings
     debug: bool = False
@@ -209,6 +226,7 @@ class OptimizerConfig:
             'metrics': self.metrics.to_dict(),
             'monitoring': self.monitoring.to_dict(),
             'telemetry': self.telemetry.to_dict(),
+            'gpu': self.gpu.to_dict(),
             'debug': self.debug,
             'log_level': self.log_level
         }

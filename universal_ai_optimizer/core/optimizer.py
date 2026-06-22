@@ -77,16 +77,41 @@ class LazyModule:
 class SecurityPipeline:
     def __init__(self, custom_checks: Optional[List[Callable[..., Any]]] = None):
         self.logger = logging.getLogger(self.__class__.__name__)
-        import importlib
-        RateLimiter = getattr(importlib.import_module('universal_ai_optimizer.modules.security.rate_limiter'), 'RateLimiter')
-        InjectionDetector = getattr(importlib.import_module('universal_ai_optimizer.modules.security.injection_detector'), 'InjectionDetector')
-        ContextSanitizer = getattr(importlib.import_module('universal_ai_optimizer.modules.security.context_sanitizer'), 'ContextSanitizer')
-        PIIFilter = getattr(importlib.import_module('universal_ai_optimizer.modules.security.pii_filter'), 'PIIFilter')
-        self.rate_limiter = RateLimiter()
-        self.injection_detector = InjectionDetector()
-        self.context_sanitizer = ContextSanitizer()
-        self.pii_filter = PIIFilter()
         self.custom_checks = custom_checks or []
+        
+        # Lazy-load security modules
+        self._rate_limiter = None
+        self._injection_detector = None
+        self._context_sanitizer = None
+        self._pii_filter = None
+        
+    @property
+    def rate_limiter(self):
+        if self._rate_limiter is None:
+            from universal_ai_optimizer.modules.security.rate_limiter import RateLimiter
+            self._rate_limiter = RateLimiter()
+        return self._rate_limiter
+        
+    @property
+    def injection_detector(self):
+        if self._injection_detector is None:
+            from universal_ai_optimizer.modules.security.injection_detector import InjectionDetector
+            self._injection_detector = InjectionDetector()
+        return self._injection_detector
+        
+    @property
+    def context_sanitizer(self):
+        if self._context_sanitizer is None:
+            from universal_ai_optimizer.modules.security.context_sanitizer import ContextSanitizer
+            self._context_sanitizer = ContextSanitizer()
+        return self._context_sanitizer
+        
+    @property
+    def pii_filter(self):
+        if self._pii_filter is None:
+            from universal_ai_optimizer.modules.security.pii_filter import PIIFilter
+            self._pii_filter = PIIFilter()
+        return self._pii_filter
 
     def _run_builtin_checks(self, prompt: str, context: Dict[str, Any], user_id: str) -> Dict[str, Any]:
         if not self.rate_limiter.allow(user_id):
@@ -176,6 +201,13 @@ class UniversalAIOptimizer:
             'universal_ai_optimizer.modules.context_compressor', 
             'ContextCompressor',
             self.config.context_compression.to_dict()
+        )
+        
+        # Lazy-load GPU optimizer
+        self.gpu_optimizer = LazyModule(
+            'universal_ai_optimizer.modules.gpu_optimizer', 
+            'GPUOptimizer',
+            self.config.gpu.to_dict() if hasattr(self.config, 'gpu') else {}
         )
         
         self.memory_manager = LazyModule(
@@ -287,7 +319,8 @@ class UniversalAIOptimizer:
             self.cache_manager,
             self.execution_engine,
             self.verification_engine,
-            self.response_optimizer
+            self.response_optimizer,
+            self.gpu_optimizer
         ]
         self.pipeline = OptimizationPipeline(pipeline_modules)
         
@@ -315,8 +348,22 @@ class UniversalAIOptimizer:
             raise PromptTooLargeError(f"Prompt exceeds maximum length of {max_prompt_len} characters.")
         
         if user_id is None:
-            # Use hash of prompt for stable anonymous rate limiting
-            user_id = f"anon_{hashlib.sha256(prompt.encode()).hexdigest()[:16]}"
+            # Use HMAC with secret key for stable anonymous rate limiting to prevent prompt reconstruction
+            import hmac
+            import os
+            # Use a secret key from config or generate one
+            if hasattr(self.config, 'security'):
+                secret_key = self.config.security.get('anonymous_user_secret', os.urandom(16).hex())
+            else:
+                secret_key = os.urandom(16).hex()
+            
+            # Ensure secret_key is bytes for HMAC
+            if isinstance(secret_key, str):
+                secret_key = secret_key.encode('utf-8')
+                
+            # Create HMAC object and get hex digest
+            h = hmac.new(secret_key, prompt.encode('utf-8'), hashlib.sha256)
+            user_id = f"anon_{h.hexdigest()[:16]}"
         user_hash = hashlib.sha256(user_id.encode()).hexdigest()[:8]
         self.logger.info(f"Starting optimization for prompt: [{len(prompt)} chars] user={user_hash}")
         
@@ -541,6 +588,7 @@ class UniversalAIOptimizer:
             'execution': self.execution_engine.get_metrics(),
             'verification': self.verification_engine.get_metrics(),
             'response': self.response_optimizer.get_metrics(),
+            'gpu_optimizer': self.gpu_optimizer.get_metrics(),
         }
         if self.optimization_brain is not None:
             metrics['optimization_brain'] = self.optimization_brain.get_metrics()

@@ -33,19 +33,20 @@ class OpenAIAdapter(BaseModelAdapter):
         self.base_url = self.config.get('base_url')  # For custom endpoints
         self.timeout = self.config.get('timeout', 30)
         
-        if not self.api_key:
-            raise ValueError("OpenAI API key required. Set via config['api_key'] or OPENAI_API_KEY env var.")
-        
-        # Use client-based API instead of global state (SEC-001 fix)
-        client_kwargs = {'api_key': self.api_key}
-        if self.organization:
-            client_kwargs['organization'] = self.organization
-        if self.base_url:
-            client_kwargs['base_url'] = self.base_url
-        self.client = openai.OpenAI(**client_kwargs)
-        
-        masked_key = f"...{self.api_key[-4:]}" if len(self.api_key) > 4 else "***"
-        self.logger.info(f"Initialized OpenAI adapter for model: {self.model} (key: {masked_key})")
+        self.client = None
+        if self.api_key:
+            # Use client-based API instead of global state (SEC-001 fix)
+            client_kwargs = {'api_key': self.api_key}
+            if self.organization:
+                client_kwargs['organization'] = self.organization
+            if self.base_url:
+                client_kwargs['base_url'] = self.base_url
+            self.client = openai.OpenAI(**client_kwargs)
+            
+            masked_key = f"...{self.api_key[-4:]}" if len(self.api_key) > 4 else "***"
+            self.logger.info(f"Initialized OpenAI adapter for model: {self.model} (key: {masked_key})")
+        else:
+            self.logger.warning("OpenAI adapter initialized without API key. generate() will fail.")
     
     def generate(self, prompt: str, 
                 max_tokens: Optional[int] = None,
@@ -56,6 +57,8 @@ class OpenAIAdapter(BaseModelAdapter):
         """
         Generate text using OpenAI's API
         """
+        if not self.client:
+            raise ValueError("OpenAI API key not provided")
         try:
             response = self.client.chat.completions.create(
                 model=self.model,

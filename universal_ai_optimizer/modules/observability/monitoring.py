@@ -215,6 +215,25 @@ class Monitoring(BaseOptimizerModule):
             self.monitoring_thread.join(timeout=5.0)
             self.logger.info("Monitoring shutdown")
     
+    def process(self, prompt: str, context: Dict[str, Any], 
+                model_adapter: Optional[Any] = None, 
+                pipeline_state: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+        """
+        Monitoring doesn't process prompts directly, but returns current health status
+        """
+        if not self.enabled:
+            return {}
+            
+        self._log_processing(len(prompt), len(str(context)) if context else 0)
+        
+        # Return current health status as monitoring result
+        return {
+            'monitoring_status': self._get_overall_status(),
+            'health_checks': self.health_status,
+            'timestamp': time.time(),
+            'module': self.__class__.__name__
+        }
+
     def get_metrics(self) -> Dict[str, Any]:
         """Get monitoring metrics"""
         base_metrics = super().get_metrics()

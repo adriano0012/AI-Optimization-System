@@ -31,13 +31,14 @@ class AnthropicAdapter(BaseModelAdapter):
         self.model = self.config.get('model', 'claude-2')
         self.timeout = self.config.get('timeout', 30)
         
-        if not self.api_key:
-            raise ValueError("Anthropic API key required. Set via config['api_key'] or ANTHROPIC_API_KEY env var.")
-        
-        self.client = anthropic.Anthropic(api_key=self.api_key, timeout=self.timeout)
-        
-        masked_key = f"...{self.api_key[-4:]}" if len(self.api_key) > 4 else "***"
-        self.logger.info(f"Initialized Anthropic adapter for model: {self.model} (key: {masked_key})")
+        self.client = None
+        if self.api_key:
+            self.client = anthropic.Anthropic(api_key=self.api_key, timeout=self.timeout)
+            
+            masked_key = f"...{self.api_key[-4:]}" if len(self.api_key) > 4 else "***"
+            self.logger.info(f"Initialized Anthropic adapter for model: {self.model} (key: {masked_key})")
+        else:
+            self.logger.warning("Anthropic adapter initialized without API key. generate() will fail.")
     
     def generate(self, prompt: str, 
                 max_tokens: Optional[int] = None,

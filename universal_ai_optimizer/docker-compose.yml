@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - UAI_DATABASE_URL=sqlite:///data/uai_optimizer.db
+      - UAI_JWT_SECRET=${UAI_JWT_SECRET:-change-me-in-production}
+      - UAI_JWT_EXPIRATION_HOURS=24
+      - UAI_CORS_ORIGINS=*
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - api_data:/app/data
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: "2.0"
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    restart: unless-stopped
+
+volumes:
+  api_data:
+  redis_data:
